@@ -1,0 +1,11 @@
+# HTTP client for sending Telegram notifications
+aiohttp ~= 3.9.5
+
+# Not so safe, but this is kept unversioned so to always pull the latest
+aiograpi
+
+# API server
+fastapi[standard] ~= 0.112.2
+
+# Dependency for aiograpi.Client.photo_upload()
+Pillow ~= 10.4.0
