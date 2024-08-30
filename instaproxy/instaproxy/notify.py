@@ -25,7 +25,7 @@ BOT_TOKEN = os.environ["TG_BOT_TOKEN"]
 CHANNEL_ID = os.environ["TG_CHANNEL"]
 
 # Error queues (keys are the exceptions' class names)
-QUEUES: DefaultDict[str, asyncio.Queue] = defaultdict(asyncio.Queue)
+QUEUES: DefaultDict[str, asyncio.Queue[Exception]] = defaultdict(asyncio.Queue)
 
 
 def enqueue_exception(err: Exception) -> None:
@@ -52,7 +52,7 @@ def enqueue_exception(err: Exception) -> None:
 def get_message_text(errors: List[Exception]) -> str:
     error, errors_count = errors[0], len(errors)
     text = [
-        f"💥 **Instaproxy error ({type(error)}): {error}**",
+        f"💥 **Instaproxy error ({type(error).__name__}): {error}**",
         "",
         "```",
         "".join(traceback.TracebackException.from_exception(error).format()),
@@ -68,7 +68,7 @@ def get_message_text(errors: List[Exception]) -> str:
     return "\n".join(text)
 
 
-async def notify_exception_group(queue: asyncio.Queue) -> bool:
+async def notify_exception_group(queue: asyncio.Queue[Exception]) -> bool:
     """
     Notify a list of exceptions via Telegram.
     https://core.telegram.org/bots/api#sendmessage

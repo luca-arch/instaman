@@ -27,7 +27,7 @@ class CacheWithTTL:
     def evict(self) -> None:
         """Evict all expired items from the cache."""
         now = time.time()
-        expired = (k for k, t in self.expiry.items() if 0 < t < now)
+        expired = [k for k, t in self.expiry.items() if 0 < t < now]
 
         for k in expired:
             del self.entries[k]
