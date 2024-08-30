@@ -1,0 +1,9 @@
+services:
+
+  instaproxy:
+    build: ./instaproxy
+    cpus: 0.5
+    mem_limit: "128M"
+    volumes:
+      - ./data/instagram:/mnt/instagram
+      - ./instaproxy/instaproxy:/mnt/modules/instaproxy:ro

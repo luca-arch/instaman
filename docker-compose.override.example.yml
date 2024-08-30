@@ -1,0 +1,22 @@
+######################################################################################
+# Primary Instagram account's credentials
+######################################################################################
+
+x-ig-credentials: &ig-credentials
+  IG_EMAIL: "name.surname@example.com"
+  IG_PASSWORD: "s3cr3t-p4ssw0rd"
+
+
+######################################################################################
+# Telegram bot's credentials, and the private group's ID where notifications are sent
+######################################################################################
+
+x-tg-credentials: &tg-credentials
+  TG_BOT_TOKEN: "0123456789:The_Secret-Token"
+  TG_CHANNEL: "-123456789"
+
+
+services:
+  instaproxy:
+    environment:
+      <<: [*ig-credentials, *tg-credentials]
