@@ -1,4 +1,27 @@
+####################################################################################################
+# Unprivileged containers
+####################################################################################################
+x-unprivileged: &unprivileged
+  cap_drop:
+    - ALL
+  ipc: shareable
+  read_only: true
+  security_opt:
+    - no-new-privileges:true
+  user: '10001:10001'
+
+####################################################################################################
+# Deployment
+####################################################################################################
 services:
+
+  instaman:
+    <<: *unprivileged
+    build: ./go-instaman
+    cpus: 0.5
+    depends_on:
+      - instaproxy
+    mem_limit: "32M"
 
   instaproxy:
     build: ./instaproxy
