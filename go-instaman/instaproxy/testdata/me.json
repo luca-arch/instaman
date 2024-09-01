@@ -1,0 +1,7 @@
+{
+    "biography": "my account bio",
+    "fullName": "Test Account",
+    "handler": "test_account",
+    "id": 123,
+    "pictureURL": "https://example.com/pic.png"
+}

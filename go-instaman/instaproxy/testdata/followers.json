@@ -1,0 +1,20 @@
+{
+    "next": "wxyz123",
+    "users": [
+        {
+            "fullName": "John Doe",
+            "handler":  "johndoe",
+            "id": 45
+        },
+        {
+            "fullName": "Jane Doe",
+            "handler":  "janedoe",
+            "id": 56
+        },
+        {
+            "fullName": "Name Surname",
+            "handler":  "name_surname",
+            "id": 67
+        }
+    ]
+}
