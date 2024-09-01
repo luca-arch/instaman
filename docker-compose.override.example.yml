@@ -17,6 +17,12 @@ x-tg-credentials: &tg-credentials
 
 
 services:
+  instaman:
+    ports:
+      - "10000:10000"
+
   instaproxy:
     environment:
       <<: [*ig-credentials, *tg-credentials]
+    ports:
+      - "15000:15000"
