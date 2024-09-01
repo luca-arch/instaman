@@ -1,11 +1,11 @@
-/docker-compose.override.yml
 
+# Paths specific to this repo
+/docker-compose.override.yml
 /data/instagram
 /data/postgres
-/frontend-app/node_modules
-
-instaproxy/.mypy_cache
-instaproxy/.venv
+/go-instaman/coverage.out
+/instaproxy/.mypy_cache
+/instaproxy/.venv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
