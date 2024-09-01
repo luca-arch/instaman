@@ -9,8 +9,8 @@ Use at your own risk!
 Instaman is a simple Instagram account manager, with some automated tasks and a nice micro-service architecture. It was authored mostly for fun, and for showcasing how a multi-service, multi-platform repository should be structured and especially how it should be maintained.
 See, for instance:
 
-* The list of [pull requests](./pulls?q=is%3Apr)
-* The [commit history](./commits/main/)
+* The list of [pull requests](https://github.com/luca-arch/instaman/pulls?q=is%3Apr)
+* The [commit history](https://github.com/luca-arch/instaman/commits)
 
 ## Set up
 
@@ -32,6 +32,21 @@ Make sure you have installed
 6. Run `docker compose up` and - voilà - your Instaman app is now running!
 
 ## Repo Directories
+
+### `/go-instaman`
+
+The backend application, written in Go. See its [README](./go-instaman/README.md) file for more detailed information!
+
+**Note** although it is not a very common practice, this folder also contains the `go.mod` and `go.sum` files. This decision was made in order to keep every service/component well separated from one another.
+
+This serves HTTP requests using the `application/json` format on via the following endpoints:
+
+* `GET /instagram/me`
+* `GET /instagram/account/{name:str}`
+* `GET /instagram/account-id/{id:int}`
+* `GET /instagram/followers/{id:int}`
+* `GET /instagram/following/{id:int}`
+* `GET /instagram/picture` (this does not serve JSON)
 
 ### `/instaproxy`
 
