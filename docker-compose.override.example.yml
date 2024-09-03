@@ -26,3 +26,7 @@ services:
       <<: [*ig-credentials, *tg-credentials]
     ports:
       - "15000:15000"
+
+  postgres:
+    ports:
+    - "5432:5432"

@@ -217,7 +217,7 @@ func TestServeHTTP(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			req := httptest.NewRequestWithContext(ctx, http.MethodGet, "/instagram/picture?pictureURL="+url.QueryEscape(test.pictureURL), nil)
+			req := httptest.NewRequestWithContext(ctx, http.MethodGet, "/instaman/instagram/picture?pictureURL="+url.QueryEscape(test.pictureURL), nil)
 			rr := httptest.NewRecorder()
 
 			picturesRelay(t, &test.fields.http).ServeHTTP(rr, req)

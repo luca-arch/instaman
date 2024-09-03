@@ -17,16 +17,15 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package webserver_test
+package service_test
 
 import (
 	"context"
 	"errors"
-	"net/http"
 	"testing"
 
 	"github.com/luca-arch/instaman/instaproxy"
-	"github.com/luca-arch/instaman/webserver"
+	"github.com/luca-arch/instaman/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -65,28 +64,11 @@ func (m *mockInstagramClient) GetUserByID(ctx context.Context, userID int64) (*i
 	return args.Get(0).(*instaproxy.User), args.Error(1)
 }
 
-func httpRequest(t *testing.T, pathValues map[string]string) *http.Request {
-	t.Helper()
-
-	req, err := http.NewRequestWithContext(context.TODO(), http.MethodGet, "https://example.com/any/", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if len(pathValues) == 0 {
-		return req
-	}
-
-	for name, value := range pathValues {
-		req.SetPathValue(name, value)
-	}
-
-	return req
-}
-
 //nolint:maintidx // test all methods
 func TestMethods(t *testing.T) {
 	t.Parallel()
+
+	testCtx := context.TODO()
 
 	stubAccount := &instaproxy.Account{
 		Biography:  "Account biography",
@@ -119,7 +101,7 @@ func TestMethods(t *testing.T) {
 	}
 
 	type fields struct {
-		callMethod func(*webserver.InstagramClient) (any, error)
+		callMethod func(*service.Instagram) (any, error)
 		setupMock  func() *mockInstagramClient
 	}
 
@@ -134,12 +116,12 @@ func TestMethods(t *testing.T) {
 	}{
 		"method GetAccount - ok": {
 			fields{
-				callMethod: func(ic *webserver.InstagramClient) (any, error) {
-					return ic.GetAccount(httpRequest(t, nil))
+				callMethod: func(ic *service.Instagram) (any, error) {
+					return ic.GetAccount(testCtx)
 				},
 				setupMock: func() *mockInstagramClient {
 					client := &mockInstagramClient{}
-					client.On("GetAccount", mock.Anything).
+					client.On("GetAccount", testCtx).
 						Return(stubAccount, nil)
 
 					return client
@@ -152,12 +134,12 @@ func TestMethods(t *testing.T) {
 		},
 		"method GetAccount - error": {
 			fields{
-				callMethod: func(ic *webserver.InstagramClient) (any, error) {
-					return ic.GetAccount(httpRequest(t, nil))
+				callMethod: func(ic *service.Instagram) (any, error) {
+					return ic.GetAccount(testCtx)
 				},
 				setupMock: func() *mockInstagramClient {
 					client := &mockInstagramClient{}
-					client.On("GetAccount", mock.Anything).
+					client.On("GetAccount", testCtx).
 						Return(&instaproxy.Account{}, stubErr)
 
 					return client
@@ -170,10 +152,10 @@ func TestMethods(t *testing.T) {
 		},
 		"method GetFollowers - ok": {
 			fields{
-				callMethod: func(ic *webserver.InstagramClient) (any, error) {
-					r := httpRequest(t, map[string]string{"id": "5678"})
-
-					return ic.GetFollowers(r)
+				callMethod: func(ic *service.Instagram) (any, error) {
+					return ic.GetFollowers(testCtx, service.GetConnectionInput{
+						UserID: 5678,
+					})
 				},
 				setupMock: func() *mockInstagramClient {
 					out := &instaproxy.Connections{
@@ -182,7 +164,7 @@ func TestMethods(t *testing.T) {
 					}
 
 					client := &mockInstagramClient{}
-					client.On("GetFollowers", mock.Anything, int64(5678), (*string)(nil)).
+					client.On("GetFollowers", testCtx, int64(5678), (*string)(nil)).
 						Return(out, nil)
 
 					return client
@@ -196,32 +178,16 @@ func TestMethods(t *testing.T) {
 				},
 			},
 		},
-		"method GetFollowers - bad call": {
-			fields{
-				callMethod: func(ic *webserver.InstagramClient) (any, error) {
-					r := httpRequest(t, nil)
-
-					return ic.GetFollowers(r)
-				},
-				setupMock: func() *mockInstagramClient {
-					return &mockInstagramClient{}
-				},
-			},
-			wants{
-				err: webserver.ErrInvalidUserID,
-				out: nil,
-			},
-		},
 		"method GetFollowers - error": {
 			fields{
-				callMethod: func(ic *webserver.InstagramClient) (any, error) {
-					r := httpRequest(t, map[string]string{"id": "1234"})
-
-					return ic.GetFollowers(r)
+				callMethod: func(ic *service.Instagram) (any, error) {
+					return ic.GetFollowers(testCtx, service.GetConnectionInput{
+						UserID: 1234,
+					})
 				},
 				setupMock: func() *mockInstagramClient {
 					client := &mockInstagramClient{}
-					client.On("GetFollowers", mock.Anything, int64(1234), (*string)(nil)).
+					client.On("GetFollowers", testCtx, int64(1234), (*string)(nil)).
 						Return(&instaproxy.Connections{}, stubErr)
 
 					return client
@@ -234,10 +200,10 @@ func TestMethods(t *testing.T) {
 		},
 		"method GetFollowing - ok": {
 			fields{
-				callMethod: func(ic *webserver.InstagramClient) (any, error) {
-					r := httpRequest(t, map[string]string{"id": "1234"})
-
-					return ic.GetFollowing(r)
+				callMethod: func(ic *service.Instagram) (any, error) {
+					return ic.GetFollowing(testCtx, service.GetConnectionInput{
+						UserID: 1234,
+					})
 				},
 				setupMock: func() *mockInstagramClient {
 					out := &instaproxy.Connections{
@@ -246,7 +212,7 @@ func TestMethods(t *testing.T) {
 					}
 
 					client := &mockInstagramClient{}
-					client.On("GetFollowing", mock.Anything, int64(1234), (*string)(nil)).
+					client.On("GetFollowing", testCtx, int64(1234), (*string)(nil)).
 						Return(out, nil)
 
 					return client
@@ -260,32 +226,16 @@ func TestMethods(t *testing.T) {
 				},
 			},
 		},
-		"method GetFollowing - bad call": {
-			fields{
-				callMethod: func(ic *webserver.InstagramClient) (any, error) {
-					r := httpRequest(t, nil)
-
-					return ic.GetFollowing(r)
-				},
-				setupMock: func() *mockInstagramClient {
-					return &mockInstagramClient{}
-				},
-			},
-			wants{
-				err: webserver.ErrInvalidUserID,
-				out: nil,
-			},
-		},
 		"method GetFollowing - error": {
 			fields{
-				callMethod: func(ic *webserver.InstagramClient) (any, error) {
-					r := httpRequest(t, map[string]string{"id": "1234"})
-
-					return ic.GetFollowing(r)
+				callMethod: func(ic *service.Instagram) (any, error) {
+					return ic.GetFollowing(testCtx, service.GetConnectionInput{
+						UserID: 1234,
+					})
 				},
 				setupMock: func() *mockInstagramClient {
 					client := &mockInstagramClient{}
-					client.On("GetFollowing", mock.Anything, int64(1234), (*string)(nil)).
+					client.On("GetFollowing", testCtx, int64(1234), (*string)(nil)).
 						Return(&instaproxy.Connections{}, stubErr)
 
 					return client
@@ -298,14 +248,14 @@ func TestMethods(t *testing.T) {
 		},
 		"method GetUser - ok": {
 			fields{
-				callMethod: func(ic *webserver.InstagramClient) (any, error) {
-					r := httpRequest(t, map[string]string{"name": "johndoe"})
-
-					return ic.GetUser(r)
+				callMethod: func(ic *service.Instagram) (any, error) {
+					return ic.GetUser(testCtx, service.GetUserInput{
+						Handler: "johndoe",
+					})
 				},
 				setupMock: func() *mockInstagramClient {
 					client := &mockInstagramClient{}
-					client.On("GetUser", mock.Anything, "johndoe").
+					client.On("GetUser", testCtx, "johndoe").
 						Return(&stubUsers[0], nil)
 
 					return client
@@ -316,32 +266,16 @@ func TestMethods(t *testing.T) {
 				out: &stubUsers[0],
 			},
 		},
-		"method GetUser - bad call": {
-			fields{
-				callMethod: func(ic *webserver.InstagramClient) (any, error) {
-					r := httpRequest(t, nil)
-
-					return ic.GetUser(r)
-				},
-				setupMock: func() *mockInstagramClient {
-					return &mockInstagramClient{}
-				},
-			},
-			wants{
-				err: webserver.ErrInvalidUserName,
-				out: nil,
-			},
-		},
 		"method GetUser - error": {
 			fields{
-				callMethod: func(ic *webserver.InstagramClient) (any, error) {
-					r := httpRequest(t, map[string]string{"name": "johndoe"})
-
-					return ic.GetUser(r)
+				callMethod: func(ic *service.Instagram) (any, error) {
+					return ic.GetUser(testCtx, service.GetUserInput{
+						Handler: "johndoe",
+					})
 				},
 				setupMock: func() *mockInstagramClient {
 					client := &mockInstagramClient{}
-					client.On("GetUser", mock.Anything, "johndoe").
+					client.On("GetUser", testCtx, "johndoe").
 						Return(&instaproxy.User{}, stubErr)
 
 					return client
@@ -354,14 +288,14 @@ func TestMethods(t *testing.T) {
 		},
 		"method GetUserByID - ok": {
 			fields{
-				callMethod: func(ic *webserver.InstagramClient) (any, error) {
-					r := httpRequest(t, map[string]string{"id": "1234"})
-
-					return ic.GetUserByID(r)
+				callMethod: func(ic *service.Instagram) (any, error) {
+					return ic.GetUserByID(testCtx, service.GetUserByIDInput{
+						UserID: 1234,
+					})
 				},
 				setupMock: func() *mockInstagramClient {
 					client := &mockInstagramClient{}
-					client.On("GetUserByID", mock.Anything, int64(1234)).
+					client.On("GetUserByID", testCtx, int64(1234)).
 						Return(&stubUsers[0], nil)
 
 					return client
@@ -372,32 +306,14 @@ func TestMethods(t *testing.T) {
 				out: &stubUsers[0],
 			},
 		},
-		"method GetUserByID - bad call": {
-			fields{
-				callMethod: func(ic *webserver.InstagramClient) (any, error) {
-					r := httpRequest(t, nil)
-
-					return ic.GetUserByID(r)
-				},
-				setupMock: func() *mockInstagramClient {
-					return &mockInstagramClient{}
-				},
-			},
-			wants{
-				err: webserver.ErrInvalidUserID,
-				out: nil,
-			},
-		},
 		"method GetUserByID - error": {
 			fields{
-				callMethod: func(ic *webserver.InstagramClient) (any, error) {
-					r := httpRequest(t, map[string]string{"id": "456"})
-
-					return ic.GetUserByID(r)
+				callMethod: func(ic *service.Instagram) (any, error) {
+					return ic.GetUserByID(testCtx, service.GetUserByIDInput{})
 				},
 				setupMock: func() *mockInstagramClient {
 					client := &mockInstagramClient{}
-					client.On("GetUserByID", mock.Anything, int64(456)).
+					client.On("GetUserByID", testCtx, int64(0)).
 						Return(&instaproxy.User{}, stubErr)
 
 					return client
@@ -415,9 +331,9 @@ func TestMethods(t *testing.T) {
 			t.Parallel()
 
 			client := test.setupMock()
-			wsClient := webserver.WrapInstagramClient(client)
+			svc := service.NewInstagramService(client)
 
-			res, err := test.fields.callMethod(wsClient)
+			res, err := test.fields.callMethod(svc)
 
 			if test.wants.err == nil {
 				assert.NoError(t, err)

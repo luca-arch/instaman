@@ -21,181 +21,109 @@ package webserver_test
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"testing"
 
-	"github.com/luca-arch/instaman/instaproxy"
 	"github.com/luca-arch/instaman/webserver"
 	"github.com/stretchr/testify/assert"
 )
 
-type client struct{}
-
-func (c *client) GetAccount(_ context.Context) (*instaproxy.Account, error) {
-	picURL, _ := url.Parse("https://example.com/avatar.png")
-
-	return &instaproxy.Account{
-		Biography:  "account bio",
-		FullName:   "John Doe",
-		Handler:    "john_doe",
-		ID:         123,
-		PictureURL: &instaproxy.URLField{URL: *picURL},
-	}, nil
+type args struct {
+	endpoint string
 }
 
-func (c *client) GetFollowers(_ context.Context, _ int64, _ *string) (*instaproxy.Connections, error) {
-	picURL0, _ := url.Parse("https://example.com/avatar-0.png")
-	picURL1, _ := url.Parse("https://example.com/avatar-1.png")
-
-	return &instaproxy.Connections{
-		Next: strPtr("next-cursor-001"),
-		Users: []instaproxy.User{
-			{
-				FullName:   "John Doe",
-				Handler:    "johndoe",
-				ID:         12,
-				PictureURL: &instaproxy.URLField{URL: *picURL0},
-			},
-			{
-				FullName:   "Jane Doe",
-				Handler:    "janedoe",
-				ID:         23,
-				PictureURL: &instaproxy.URLField{URL: *picURL1},
-			},
-			{
-				FullName:   "Doe John",
-				Handler:    "doejohn",
-				ID:         34,
-				PictureURL: &instaproxy.URLField{URL: *picURL0},
-			},
-			{
-				FullName:   "Doe Jane",
-				Handler:    "doejane",
-				ID:         45,
-				PictureURL: &instaproxy.URLField{URL: *picURL1},
-			},
-		},
-	}, nil
+type wants struct {
+	body   []byte
+	status int
 }
 
-func (c *client) GetFollowing(_ context.Context, _ int64, _ *string) (*instaproxy.Connections, error) {
-	picURL0, _ := url.Parse("https://example.com/avatar-2.png")
-	picURL1, _ := url.Parse("https://example.com/avatar-3.png")
-
-	return &instaproxy.Connections{
-		Next: strPtr("next-cursor-002"),
-		Users: []instaproxy.User{
-			{
-				FullName:   "John Doe",
-				Handler:    "johndoe",
-				ID:         45,
-				PictureURL: &instaproxy.URLField{URL: *picURL0},
-			},
-			{
-				FullName:   "Jane Doe",
-				Handler:    "janedoe",
-				ID:         56,
-				PictureURL: &instaproxy.URLField{URL: *picURL1},
-			},
-			{
-				FullName:   "Doe John",
-				Handler:    "doejohn",
-				ID:         67,
-				PictureURL: &instaproxy.URLField{URL: *picURL0},
-			},
-			{
-				FullName:   "Doe Jane",
-				Handler:    "doejane",
-				ID:         78,
-				PictureURL: &instaproxy.URLField{URL: *picURL1},
-			},
-		},
-	}, nil
-}
-
-func (c *client) GetUser(_ context.Context, _ string) (*instaproxy.User, error) {
-	picURL, _ := url.Parse("https://example.com/user.png")
-
-	return &instaproxy.User{
-		FullName:   "User Name",
-		Handler:    "user_name",
-		ID:         123,
-		PictureURL: &instaproxy.URLField{URL: *picURL},
-	}, nil
-}
-
-func (c *client) GetUserByID(_ context.Context, _ int64) (*instaproxy.User, error) {
-	picURL, _ := url.Parse("https://example.com/user.png")
-
-	return &instaproxy.User{
-		FullName:   "User Name",
-		Handler:    "user_name",
-		ID:         456,
-		PictureURL: &instaproxy.URLField{URL: *picURL},
-	}, nil
-}
-
-func TestInstagramEndpoints(t *testing.T) {
+func TestEndpointsResponses(t *testing.T) {
 	t.Parallel()
 
 	ctx, cancel := context.WithCancel(context.TODO())
 
-	server, _ := webserver.Create(ctx, &client{}, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	server, _ := webserver.Create(ctx, &jobsvc{}, &igservice{}, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	testServer := httptest.NewServer(server.Handler)
 
 	t.Cleanup(testServer.Close)
 	t.Cleanup(cancel)
 
-	type args struct {
-		endpoint string
-	}
-
-	type wants struct {
-		body   []byte
-		status int
-	}
-
 	tests := map[string]struct {
 		args
 		wants
 	}{
-		"GET /instagram/me": {
-			args{endpoint: "/instagram/me"},
+		"GET /instaman/instagram/me": {
+			args{endpoint: "/instaman/instagram/me"},
 			wants{
 				body:   fixture(t, "testdata/instagram-me.json"),
 				status: http.StatusOK,
 			},
 		},
-		"GET /instagram/account/{name}": {
-			args{endpoint: "/instagram/account/name"},
+		"GET /instaman/instagram/account/{name}": {
+			args{endpoint: "/instaman/instagram/account/name"},
 			wants{
 				body:   fixture(t, "testdata/instagram-account-name.json"),
 				status: http.StatusOK,
 			},
 		},
-		"GET /instagram/account-id/{id}": {
-			args{endpoint: "/instagram/account-id/123"},
+		"GET /instaman/instagram/account-id/{id}": {
+			args{endpoint: "/instaman/instagram/account-id/123"},
 			wants{
 				body:   fixture(t, "testdata/instagram-account-id.json"),
 				status: http.StatusOK,
 			},
 		},
-		"GET /instagram/followers/{id}": {
-			args{endpoint: "/instagram/followers/123"},
+		"GET /instaman/instagram/followers/{id}": {
+			args{endpoint: "/instaman/instagram/followers/123"},
 			wants{
 				body:   fixture(t, "testdata/instagram-followers.json"),
 				status: http.StatusOK,
 			},
 		},
-		"GET /instagram/following/{id}": {
-			args{endpoint: "/instagram/following/123"},
+		"GET /instaman/instagram/following/{id}": {
+			args{endpoint: "/instaman/instagram/following/123"},
 			wants{
 				body:   fixture(t, "testdata/instagram-following.json"),
 				status: http.StatusOK,
+			},
+		},
+		"GET /instaman/jobs": {
+			args{endpoint: "/instaman/jobs"},
+			wants{
+				body:   fixture(t, "testdata/jobs-job.json"),
+				status: http.StatusOK,
+			},
+		},
+		"GET /instaman/jobs/copy (followers)": {
+			args{endpoint: "/instaman/jobs/copy?direction=followers&userID=123"},
+			wants{
+				body:   fixture(t, "testdata/jobs-copy.json"),
+				status: http.StatusOK,
+			},
+		},
+		"GET /instaman/jobs/copy (following)": {
+			args{endpoint: "/instaman/jobs/copy?direction=following&userID=123"},
+			wants{
+				body:   fixture(t, "testdata/jobs-copy.json"),
+				status: http.StatusOK,
+			},
+		},
+		"GET /instaman/jobs/copy (error, no direction)": {
+			args{endpoint: "/instaman/jobs/copy"},
+			wants{
+				body:   expectedErr(t, "missing required field: direction"),
+				status: http.StatusBadRequest,
+			},
+		},
+		"GET /instaman/jobs/copy (error, no user)": {
+			args{endpoint: "/instaman/jobs/copy?direction=followers"},
+			wants{
+				body:   expectedErr(t, "missing required field: userID"),
+				status: http.StatusBadRequest,
 			},
 		},
 	}
@@ -217,4 +145,19 @@ func TestInstagramEndpoints(t *testing.T) {
 			assert.Equal(t, test.wants.body, body, "Actual: "+string(body))
 		})
 	}
+}
+
+func expectedErr(t *testing.T, msg string) []byte {
+	t.Helper()
+
+	b, err := json.Marshal(struct {
+		Err string `json:"error"`
+	}{
+		Err: msg,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return append(b, byte(0xa)) // Append newline!
 }

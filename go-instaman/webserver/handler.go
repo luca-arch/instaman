@@ -27,6 +27,7 @@ import (
 	"net/http"
 
 	"github.com/luca-arch/instaman/instaproxy"
+	"github.com/luca-arch/instaman/internal"
 )
 
 type errResponse struct {
@@ -57,13 +58,24 @@ type TargetFuncWithInput[In any, Out any] func(context.Context, In) (Out, error)
 // HandleWithInput takes a TargetFuncWithInput and uses it to create an HTTP handler that reads the request's body.
 func HandleWithInput[In any, Out any](logger *slog.Logger, f TargetFuncWithInput[In, Out]) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var in In
+		var (
+			in  In
+			err error
+		)
 
 		logger.Info("HTTP request", "http.method", r.Method, "http.url", r.URL)
 
-		// Read request's body.
-		if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-			http.Error(w, "invalid request arguments", http.StatusBadRequest)
+		switch r.Method {
+		case http.MethodGet, http.MethodHead:
+			// Read request's query/path.
+			in, err = internal.InputFromRequest[In](r)
+		default:
+			// Read request's body.
+			err = json.NewDecoder(r.Body).Decode(&in)
+		}
+
+		if err != nil {
+			writeErrResponse(w, err, http.StatusBadRequest)
 
 			return
 		}
@@ -115,4 +127,12 @@ func writeResponse[T any](w http.ResponseWriter, logger *slog.Logger, out T, err
 	if wErr != nil {
 		logger.Warn("failed to serve HTTP response", "error", wErr)
 	}
+}
+
+func writeErrResponse(w http.ResponseWriter, err error, status int) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+
+	//nolint:errchkjson // Bad client!
+	json.NewEncoder(w).Encode(errResponse{Error: err.Error()}) //nolint:errcheck
 }
