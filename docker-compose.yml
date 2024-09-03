@@ -11,6 +11,15 @@ x-unprivileged: &unprivileged
   user: '10001:10001'
 
 ####################################################################################################
+# DB credentials
+####################################################################################################
+
+x-db-credentials: &db-credentials
+  POSTGRES_DB: database001
+  POSTGRES_USER: postgresuser
+  POSTGRES_PASSWORD: postgressecret
+
+####################################################################################################
 # Deployment
 ####################################################################################################
 services:
@@ -21,6 +30,9 @@ services:
     cpus: 0.5
     depends_on:
       - instaproxy
+      - postgres
+    environment:
+      <<: *db-credentials
     mem_limit: "32M"
 
   instaproxy:
@@ -30,3 +42,16 @@ services:
     volumes:
       - ./data/instagram:/mnt/instagram
       - ./instaproxy/instaproxy:/mnt/modules/instaproxy:ro
+
+  postgres:
+    image: postgres:16.4-alpine3.20
+    cpus: 0.5
+    environment:
+      <<: *db-credentials
+    logging:
+      options:
+          max-size: "4k"
+    mem_limit: "256M"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+      - ./postgres-seed.sql:/docker-entrypoint-initdb.d/seed-data.sql
