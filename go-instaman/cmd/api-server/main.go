@@ -23,20 +23,26 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"time"
 
+	"github.com/luca-arch/instaman/database"
 	"github.com/luca-arch/instaman/instaproxy"
+	"github.com/luca-arch/instaman/service"
 	"github.com/luca-arch/instaman/webserver"
 )
 
 const (
 	instaproxyTimeout = 90 // The instaproxy client's timeout. High value to account for latency due to retries and login attempts.
+	psqlMaxPoolSize   = 5  // Postgres pool size (max)
+	psqlMinPoolSize   = 2  // Postgres pool size (min)
 )
 
-// Boot set up a JSON logger, a new Instaproxy client, and the api webserver.
+// Boot sets up the api webserver and its dependencies.
 func Boot(ctx context.Context, devMode bool) (*http.Server, *slog.Logger) {
 	// Set up logger.
 	var logger *slog.Logger
@@ -58,9 +64,11 @@ func Boot(ctx context.Context, devMode bool) (*http.Server, *slog.Logger) {
 	}
 
 	// Set up dependencies.
+	db := database.NewPool(ctx, psqlDSN(devMode)).WithLogger(logger)
+	jobService := service.NewJobsService(db)
 	httpClient := &http.Client{Timeout: instaproxyTimeout * time.Second} //nolint:exhaustruct // Defaults are ok
 
-	// Set up Instaproxy client.
+	// Set up Instaproxy client and service.
 	igClient := instaproxy.NewClient(httpClient, logger)
 	if devMode {
 		if err := igClient.BaseURL("http://127.0.0.1:15000"); err != nil {
@@ -68,14 +76,34 @@ func Boot(ctx context.Context, devMode bool) (*http.Server, *slog.Logger) {
 		}
 	}
 
+	igService := service.NewInstagramService(igClient)
+
 	// Init server with routes.
-	server, err := webserver.Create(ctx, igClient, logger)
+	server, err := webserver.Create(ctx, jobService, igService, logger)
 	if err != nil {
 		logger.Error("could not bootstrap api-server", "error", err)
 		panic(err)
 	}
 
 	return server, logger
+}
+
+// psqlDSN builds the PostgreSQL DSN from the environment variables.
+func psqlDSN(devMode bool) string {
+	user, pass, db, host := os.Getenv("POSTGRES_DB"), os.Getenv("POSTGRES_PASSWORD"), os.Getenv("POSTGRES_DB"), "postgres"
+
+	if devMode {
+		return "postgres://postgresuser:postgressecret@127.0.0.1:5432/database001?pool_max_conns=5&pool_min_conns=1"
+	}
+
+	return fmt.Sprintf("postgres://%s:%s@%s/%s?pool_max_conns=%d&pool_min_conns=%d",
+		user,
+		pass,
+		net.JoinHostPort(host, "5432"),
+		db,
+		psqlMaxPoolSize,
+		psqlMinPoolSize,
+	)
 }
 
 func main() {

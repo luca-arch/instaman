@@ -36,19 +36,22 @@ const (
 )
 
 // Create sets up an HTTP server with all the app routes mounted.
-func Create(ctx context.Context, igClient igclient, logger *slog.Logger) (*http.Server, error) {
-	wrapped := WrapInstagramClient(igClient)
+func Create(ctx context.Context, jobService jobservice, igservice igservice, logger *slog.Logger) (*http.Server, error) {
+	// wrapped := WrapInstagramClient(igClient)
 	relay := DefaultPicturesRelay(logger)
 
 	mux := &http.ServeMux{}
 
-	mux.Handle("GET /instagram/me", HandleWithRequest(logger, wrapped.GetAccount))
-	mux.Handle("GET /instagram/account/{name}", HandleWithRequest(logger, wrapped.GetUser))
-	mux.Handle("GET /instagram/account-id/{id}", HandleWithRequest(logger, wrapped.GetUserByID))
-	mux.Handle("GET /instagram/followers/{id}", HandleWithRequest(logger, wrapped.GetFollowers))
-	mux.Handle("GET /instagram/following/{id}", HandleWithRequest(logger, wrapped.GetFollowing))
+	mux.Handle("GET /instaman/instagram/me", Handle(logger, igservice.GetAccount))
+	mux.Handle("GET /instaman/instagram/account/{name}", HandleWithInput(logger, igservice.GetUser))
+	mux.Handle("GET /instaman/instagram/account-id/{id}", HandleWithInput(logger, igservice.GetUserByID))
+	mux.Handle("GET /instaman/instagram/followers/{id}", HandleWithInput(logger, igservice.GetFollowers))
+	mux.Handle("GET /instaman/instagram/following/{id}", HandleWithInput(logger, igservice.GetFollowing))
 
-	mux.Handle("GET /instagram/picture", relay)
+	mux.Handle("GET /instaman/instagram/picture", relay)
+
+	mux.Handle("GET /instaman/jobs/copy", HandleWithInput(logger, jobService.FindCopyJob))
+	mux.Handle("GET /instaman/jobs", HandleWithInput(logger, jobService.FindJob))
 
 	relay.Watch(ctx, FlushFrequency)
 
