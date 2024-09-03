@@ -7,6 +7,7 @@ with Instagram.
 from aiograpi.exceptions import (  # type: ignore[import-untyped]
     ChallengeRequired,
     ClientLoginRequired,
+    ClientUnauthorizedError,
     LoginRequired,
     ProxyError,
 )
@@ -24,6 +25,7 @@ from .types import AccountDict, InstagramUserDict
 # List of aiograpi exceptions for which the client should be re-instantiated.
 AUTH_EXCEPTIONS = (
     ClientLoginRequired,
+    ClientUnauthorizedError,
     ProxyError,
     LoginRequired,
 )
