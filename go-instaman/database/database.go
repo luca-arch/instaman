@@ -71,7 +71,7 @@ func NewPool(ctx context.Context, dsn string) *Database {
 }
 
 // Count executes the provided SQL expecting a COUNT.
-func Count(ctx context.Context, db *Database, sql string, args ...any) (int, error) {
+func Count(ctx context.Context, db *Database, sql string, args ...any) (int32, error) {
 	db.logger.Debug("Query", "sql", sql, "args", args)
 
 	res, err := db.cnx.Query(ctx, sql, args...)
@@ -81,7 +81,7 @@ func Count(ctx context.Context, db *Database, sql string, args ...any) (int, err
 
 	defer res.Close()
 
-	count, err := pgx.CollectExactlyOneRow(res, pgx.RowTo[int])
+	count, err := pgx.CollectExactlyOneRow(res, pgx.RowTo[int32])
 	if err != nil {
 		return -1, errors.Join(ErrDatabaseFailure, err)
 	}

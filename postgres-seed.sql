@@ -31,12 +31,12 @@ CREATE TABLE IF NOT EXISTS jobs_events (
 -- Table `user_followers` contains connections who follow `account_id`.
 --
 CREATE TABLE IF NOT EXISTS user_followers (
-    account_id INTEGER      NOT NULL,
+    account_id BIGINT       NOT NULL,
     first_seen TIMESTAMP    NOT NULL,
     handler    TEXT         NOT NULL,
     last_seen  TIMESTAMP    NOT NULL,
     pic_url    TEXT,
-    user_id    INTEGER      NOT NULL,
+    user_id    BIGINT       NOT NULL,
 
     PRIMARY KEY (account_id, user_id)
 );
@@ -45,12 +45,12 @@ CREATE TABLE IF NOT EXISTS user_followers (
 -- Table `user_following` contains connections followed by `account_id`.
 --
 CREATE TABLE IF NOT EXISTS user_following (
-    account_id INTEGER      NOT NULL,
+    account_id BIGINT       NOT NULL,
     first_seen TIMESTAMP    NOT NULL,
     handler    TEXT         NOT NULL,
     last_seen  TIMESTAMP    NOT NULL,
     pic_url    TEXT,
-    user_id    INTEGER      NOT NULL,
+    user_id    BIGINT       NOT NULL,
 
     PRIMARY KEY (account_id, user_id)
 );

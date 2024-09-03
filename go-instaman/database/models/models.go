@@ -39,7 +39,7 @@ type CopyJob struct {
 	*Job
 
 	Results []User `json:"results"`
-	Total   int    `json:"resultsCount"`
+	Total   int32  `json:"resultsCount"`
 }
 
 // Job represents a record of the `jobs` table.

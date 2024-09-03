@@ -163,9 +163,9 @@ func FindJob(ctx context.Context, db *Database, params FindJobParams) (*models.J
 		job_type,
 		label,
 		last_run,
+		metadata,
 		next_run,
-		state,
-		store
+		state
 	FROM
 		jobs
 	WHERE ` + strings.Join(whereP, " AND ")
