@@ -7,7 +7,10 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY cmd cmd/
+COPY database database/
 COPY instaproxy instaproxy/
+COPY internal internal/
+COPY service service/
 COPY webserver webserver/
 RUN go build -o api-server ./cmd/api-server/main.go
 
