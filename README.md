@@ -41,12 +41,14 @@ The backend application, written in Go. See its [README](./go-instaman/README.md
 
 This serves HTTP requests using the `application/json` format on via the following endpoints:
 
-* `GET /instagram/me`
-* `GET /instagram/account/{name:str}`
-* `GET /instagram/account-id/{id:int}`
-* `GET /instagram/followers/{id:int}`
-* `GET /instagram/following/{id:int}`
-* `GET /instagram/picture` (this does not serve JSON)
+* `GET /instaman/instagram/me`
+* `GET /instaman/instagram/account/{name:str}`
+* `GET /instaman/instagram/account-id/{id:int}`
+* `GET /instaman/instagram/followers/{id:int}`
+* `GET /instaman/instagram/following/{id:int}`
+* `GET /instaman/instagram/picture` (this does not serve JSON)
+* `GET /instaman/jobs/copy`
+* `GET /instaman/jobs/`
 
 ### `/instaproxy`
 
