@@ -55,3 +55,12 @@ services:
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
       - ./postgres-seed.sql:/docker-entrypoint-initdb.d/seed-data.sql
+
+  ui:
+    build: ./react-app
+    cpus: 0.5
+    depends_on:
+      - instaman
+    mem_limit: "32M"
+    ports:
+      - "8080:8080"
