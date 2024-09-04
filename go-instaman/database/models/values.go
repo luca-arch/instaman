@@ -23,3 +23,13 @@ const (
 	JobTypeCopyFollowers = "copy-followers"
 	JobTypeCopyFollowing = "copy-following"
 )
+
+// IsValidJobType return whether jobType is a valid value for the jobs.job_type column.
+func IsValidJobType(jobType string) bool {
+	switch jobType {
+	case JobTypeCopyFollowers, JobTypeCopyFollowing:
+		return true
+	default:
+		return false
+	}
+}
