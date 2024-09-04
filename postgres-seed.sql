@@ -23,7 +23,7 @@ CREATE INDEX jobs_type_idx
 CREATE TABLE IF NOT EXISTS jobs_events (
     id        SERIAL PRIMARY KEY,
     event_msg TEXT          NOT NULL,
-    job_id    INTEGER       NOT NULL REFERENCES jobs,
+    job_id    INTEGER       NOT NULL REFERENCES jobs ON DELETE CASCADE,
     ts        TIMESTAMP     NOT NULL
 );
 
