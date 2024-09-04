@@ -1,0 +1,1 @@
+[{"id":123,"checksum":"test:123456","type":"jobtype","label":"Test label","lastRun":null,"metadata":null,"nextRun":null,"state":"paused"},{"id":456,"checksum":"test:abcdef","type":"jobtype","label":"Test job","lastRun":"2026-01-01T12:00:00Z","metadata":null,"nextRun":"2026-01-01T12:00:00Z","state":"suspended"}]

@@ -180,6 +180,55 @@ func (j *jobsvc) FindJob(context.Context, database.FindJobParams) (*models.Job, 
 	}, nil
 }
 
+func (j *jobsvc) FindJobs(context.Context, database.FindJobsParams) ([]models.Job, error) {
+	t, err := time.Parse(time.RFC3339, "2026-01-01T12:00:00Z")
+	if err != nil {
+		panic(err)
+	}
+
+	return []models.Job{
+		{
+			ID:       123,
+			Checksum: "test:123456",
+			Type:     "jobtype",
+			Label:    "Test label",
+			LastRun:  nil,
+			NextRun:  nil,
+			State:    "paused",
+		},
+		{
+			ID:       456,
+			Checksum: "test:abcdef",
+			Type:     "jobtype",
+			Label:    "Test job",
+			LastRun:  &t,
+			NextRun:  &t,
+			State:    "suspended",
+		},
+	}, nil
+}
+
+func (j *jobsvc) NewCopyJob(context.Context, database.NewCopyJobParams) (*models.CopyJob, error) {
+	t, err := time.Parse(time.RFC3339, "2025-01-01T12:00:00Z")
+	if err != nil {
+		panic(err)
+	}
+
+	return &models.CopyJob{
+		Job: &models.Job{
+			ID:       123,
+			Checksum: "test:123456",
+			Type:     "jobtype",
+			Label:    "Test label",
+			LastRun:  nil,
+			NextRun:  &t,
+			State:    "new",
+		},
+		Results: []models.User{},
+		Total:   0,
+	}, nil
+}
+
 func fixture(t *testing.T, path string) []byte {
 	t.Helper()
 
