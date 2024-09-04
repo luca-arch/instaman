@@ -82,7 +82,7 @@ func (u *URLField) UnmarshalJSON(data []byte) error {
 
 	switch {
 	case err != nil:
-		return errors.Join(ErrInvalidPictureURL, err)
+		return errors.Join(err, ErrInvalidPictureURL)
 	case s == "":
 		return nil
 	}
@@ -91,7 +91,7 @@ func (u *URLField) UnmarshalJSON(data []byte) error {
 
 	switch {
 	case err != nil:
-		return errors.Join(ErrInvalidPictureURL, err)
+		return errors.Join(err, ErrInvalidPictureURL)
 	case !val.IsAbs():
 		return ErrInvalidPictureURL
 	}

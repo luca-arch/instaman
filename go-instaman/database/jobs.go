@@ -94,7 +94,7 @@ type NewJobParams struct {
 // FindCopyJob finds a job of type `copy-followers` or `copy-following`.
 // It calls FindJob and augments the result with the total number of connections already retrieved.
 // If WithPage is set, that slice of results is also included in the returned value.
-func (db *Database) FindCopyJob(ctx context.Context, params FindCopyJobParams) (*models.CopyJob, error) {
+func (d *Database) FindCopyJob(ctx context.Context, params FindCopyJobParams) (*models.CopyJob, error) {
 	var table string
 
 	p := FindJobParams{} //nolint:exhaustruct // OK
@@ -112,7 +112,7 @@ func (db *Database) FindCopyJob(ctx context.Context, params FindCopyJobParams) (
 		return nil, ErrFindCopyJobParams
 	}
 
-	job, err := db.FindJob(ctx, p)
+	job, err := d.FindJob(ctx, p)
 
 	switch {
 	case err != nil:
@@ -122,7 +122,7 @@ func (db *Database) FindCopyJob(ctx context.Context, params FindCopyJobParams) (
 	}
 
 	sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s WHERE account_id = $1`, table)
-	total, err := Count(ctx, db, sql, params.UserID)
+	total, err := Count(ctx, d, sql, params.UserID)
 
 	switch {
 	case err != nil:
@@ -153,7 +153,7 @@ func (db *Database) FindCopyJob(ctx context.Context, params FindCopyJobParams) (
 	LIMIT $2 OFFSET $3
 	`
 
-	results, err := Select[models.User](ctx, db, sql, params.UserID, limit, offset)
+	results, err := Select[models.User](ctx, d, sql, params.UserID, limit, offset)
 	if err != nil {
 		return nil, errors.Join(err, ErrDriverFailure)
 	}
@@ -166,7 +166,7 @@ func (db *Database) FindCopyJob(ctx context.Context, params FindCopyJobParams) (
 }
 
 // FindJob finds a job by its ID or checksum.
-func (db *Database) FindJob(ctx context.Context, params FindJobParams) (*models.Job, error) {
+func (d *Database) FindJob(ctx context.Context, params FindJobParams) (*models.Job, error) {
 	if params.ID <= 0 && params.Checksum == "" {
 		return nil, ErrFindJobParams
 	}
@@ -208,7 +208,7 @@ func (db *Database) FindJob(ctx context.Context, params FindJobParams) (*models.
 		jobs
 	WHERE ` + strings.Join(whereP, " AND ")
 
-	job, err := SelectOne[models.Job](ctx, db, sql, whereV...)
+	job, err := SelectOne[models.Job](ctx, d, sql, whereV...)
 
 	switch {
 	case err == nil:
@@ -221,7 +221,7 @@ func (db *Database) FindJob(ctx context.Context, params FindJobParams) (*models.
 }
 
 // FindJobs returns a list of jobs.
-func (db *Database) FindJobs(ctx context.Context, params FindJobsParams) ([]models.Job, error) {
+func (d *Database) FindJobs(ctx context.Context, params FindJobsParams) ([]models.Job, error) {
 	whereP := make([]string, 0)
 	args := make([]any, 0)
 	where := ""
@@ -277,7 +277,7 @@ func (db *Database) FindJobs(ctx context.Context, params FindJobsParams) ([]mode
 	sql = fmt.Sprintf("%s %s ORDER BY %s %s LIMIT %d OFFSET %d",
 		sql, where, order, dir, MaxJobsResult, params.Page*MaxJobsResult)
 
-	jobs, err := Select[models.Job](ctx, db, sql, args...)
+	jobs, err := Select[models.Job](ctx, d, sql, args...)
 
 	switch {
 	case err == nil:
@@ -288,7 +288,7 @@ func (db *Database) FindJobs(ctx context.Context, params FindJobsParams) ([]mode
 }
 
 // NewCopyJob creates a new Job of either type copy-followers or copy-following.
-func (db *Database) NewCopyJob(ctx context.Context, params NewCopyJobParams) (*models.CopyJob, error) {
+func (d *Database) NewCopyJob(ctx context.Context, params NewCopyJobParams) (*models.CopyJob, error) {
 	switch {
 	case params.Type != models.JobTypeCopyFollowers && params.Type != models.JobTypeCopyFollowing:
 		return nil, ErrFindCopyJobParams
@@ -296,7 +296,7 @@ func (db *Database) NewCopyJob(ctx context.Context, params NewCopyJobParams) (*m
 		return nil, ErrInvalidID
 	}
 
-	j, err := db.NewJob(ctx, NewJobParams{
+	j, err := d.NewJob(ctx, NewJobParams{
 		Checksum: fmt.Sprintf("%s:%d", params.Type, params.Metadata.UserID),
 		Label:    params.Label,
 		Metadata: params.Metadata,
@@ -316,7 +316,7 @@ func (db *Database) NewCopyJob(ctx context.Context, params NewCopyJobParams) (*m
 }
 
 // NewJob creates a new Job in the `jobs` table.
-func (db *Database) NewJob(ctx context.Context, params NewJobParams) (*models.Job, error) {
+func (d *Database) NewJob(ctx context.Context, params NewJobParams) (*models.Job, error) {
 	switch {
 	case !models.IsValidJobType(params.Type):
 		return nil, ErrInvalidType
@@ -338,7 +338,7 @@ func (db *Database) NewJob(ctx context.Context, params NewJobParams) (*models.Jo
 	RETURNING *
 	`
 
-	j, err := SelectOne[models.Job](ctx, db, sql, params.Checksum, params.Type, params.Label, params.Metadata, params.NextRun, params.State)
+	j, err := SelectOne[models.Job](ctx, d, sql, params.Checksum, params.Type, params.Label, params.Metadata, params.NextRun, params.State)
 	if err != nil {
 		return nil, errors.Join(err, ErrDriverFailure)
 	}
