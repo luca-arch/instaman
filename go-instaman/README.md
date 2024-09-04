@@ -174,6 +174,50 @@ Example response:
 }
 ```
 
+### GET /instaman/jobs/all
+
+This endpoint returns a list of jobs found in the database.
+
+Query arguments:
+
+- `order`: accepts `last_run` (default), `next_run`, `state`, and `label`. Can be prefixed with `-` (eg: `-next_run`) to reverse the sorting.
+- `page`: used for pagination.
+- `state`: filter by job status.
+- `type`: filter by job type.
+
+Example response:
+
+```json
+[
+    {
+        "id": 1,
+        "checksum": "copy-followers:1234",
+        "type": "copy-followers",
+        "label": "People following @johndoe",
+        "lastRun": "2025-01-01T12:00:00.000Z",
+        "metadata": {
+            "frequency": "daily",
+            "userID": 1234
+        },
+        "nextRun": null,
+        "state": "new"
+    },
+    {
+        "id": 2,
+        "checksum": "copy-following:456",
+        "type": "copy-following",
+        "label": "People followed by Luca",
+        "lastRun": "2025-01-01T12:00:00.000Z",
+        "metadata": {
+            "frequency": "weekly",
+            "userID": 456
+        },
+        "nextRun": "2025-01-08T12:00:00.000Z",
+        "state": "new"
+    }
+]
+```
+
 ### GET /instaman/jobs/copy
 
 This endpoint finds a copy job in the database. It returns `null` instead of erroring if the job is not found.
@@ -216,5 +260,43 @@ Example response:
     ],
     "resultsCount": 2,
     "type": "copy-followers"
+}
+```
+
+### POST /instaman/jobs/copy
+
+This endpoint creates a new job of type `copy-followers` or `copy-following`, and then returns it.
+
+Example request:
+
+```json
+{
+    "label": "People who follow @johndoe",
+    "metadata": {
+        "frequency": "daily",
+        "userID": 1234
+    },
+    "nextRun": "2024-01-01T18:00:00.000Z",
+    "type": "copy-followers"
+}
+```
+
+Example response:
+
+```json
+{
+    "id": 3,
+    "checksum": "copy-followers:1234",
+    "type": "copy-followers",
+    "label": "People who follow @johndoe",
+    "lastRun": null,
+    "metadata": {
+        "frequency": "daily",
+        "userID": 1234
+    },
+    "nextRun": "2024-01-01T18:00:00.000Z",
+    "state": "new",
+    "results": null,
+    "resultsCount": 0
 }
 ```
