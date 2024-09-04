@@ -32,13 +32,20 @@ const MaxCopyResults = 500 // The maximum number of users per page to retrieve w
 
 var ErrDBFailure = errors.New("db error") // Generic error wrapper for db failures.
 
+type dbjobs interface {
+	FindCopyJob(context.Context, database.FindCopyJobParams) (*models.CopyJob, error)
+	FindJob(context.Context, database.FindJobParams) (*models.Job, error)
+	FindJobs(context.Context, database.FindJobsParams) ([]models.Job, error)
+	NewCopyJob(context.Context, database.NewCopyJobParams) (*models.CopyJob, error)
+}
+
 // Jobs is the service that abstracts jobs operations from the database layer.
 type Jobs struct {
-	db *database.Database
+	db dbjobs
 }
 
 // NewJobsService sets up and returns a new Job Service.
-func NewJobsService(db *database.Database) *Jobs {
+func NewJobsService(db dbjobs) *Jobs {
 	return &Jobs{
 		db: db,
 	}
@@ -47,7 +54,7 @@ func NewJobsService(db *database.Database) *Jobs {
 // FindCopyJob finds a job of type `copy-followers` or `copy-following`.
 // This method does not error if the job isn't found, it returns a nil pointer.
 func (j *Jobs) FindCopyJob(ctx context.Context, params database.FindCopyJobParams) (*models.CopyJob, error) {
-	cj, err := database.FindCopyJob(ctx, j.db, params)
+	cj, err := j.db.FindCopyJob(ctx, params)
 	if err != nil {
 		return nil, errors.Join(err, ErrDBFailure)
 	}
@@ -58,10 +65,30 @@ func (j *Jobs) FindCopyJob(ctx context.Context, params database.FindCopyJobParam
 // FindJob finds a job by its ID or checksum.
 // This method does not error if the job isn't found, it returns a nil pointer.
 func (j *Jobs) FindJob(ctx context.Context, params database.FindJobParams) (*models.Job, error) {
-	jj, err := database.FindJob(ctx, j.db, params)
+	jj, err := j.db.FindJob(ctx, params)
 	if err != nil {
 		return nil, errors.Join(err, ErrDBFailure)
 	}
 
 	return jj, nil
+}
+
+// FindJobs retrieves a list of jobs from the database.
+func (j *Jobs) FindJobs(ctx context.Context, params database.FindJobsParams) ([]models.Job, error) {
+	jobs, err := j.db.FindJobs(ctx, params)
+	if err != nil {
+		return nil, errors.Join(err, ErrDBFailure)
+	}
+
+	return jobs, nil
+}
+
+// NewCopyJob creates a new CopyJob in the database and returns it.
+func (j *Jobs) NewCopyJob(ctx context.Context, params database.NewCopyJobParams) (*models.CopyJob, error) {
+	cj, err := j.db.NewCopyJob(ctx, params)
+	if err != nil {
+		return nil, errors.Join(err, ErrDBFailure)
+	}
+
+	return cj, nil
 }

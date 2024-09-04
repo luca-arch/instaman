@@ -50,8 +50,10 @@ func Create(ctx context.Context, jobService jobservice, igservice igservice, log
 
 	mux.Handle("GET /instaman/instagram/picture", relay)
 
+	mux.Handle("GET /instaman/jobs/all", HandleWithInput(logger, jobService.FindJobs))
 	mux.Handle("GET /instaman/jobs/copy", HandleWithInput(logger, jobService.FindCopyJob))
 	mux.Handle("GET /instaman/jobs", HandleWithInput(logger, jobService.FindJob))
+	mux.Handle("POST /instaman/jobs/copy", HandleWithInput(logger, jobService.NewCopyJob))
 
 	relay.Watch(ctx, FlushFrequency)
 

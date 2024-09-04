@@ -31,4 +31,6 @@ import (
 type jobservice interface {
 	FindCopyJob(context.Context, database.FindCopyJobParams) (*models.CopyJob, error)
 	FindJob(context.Context, database.FindJobParams) (*models.Job, error)
+	FindJobs(context.Context, database.FindJobsParams) ([]models.Job, error)
+	NewCopyJob(context.Context, database.NewCopyJobParams) (*models.CopyJob, error)
 }
