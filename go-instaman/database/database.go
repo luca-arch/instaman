@@ -30,6 +30,11 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+const (
+	OrderAsc  = "ASC"
+	OrderDesc = "DESC"
+)
+
 var ErrDatabaseFailure = errors.New("postgresql error") // Wrapper for pgx/pgxpool errors.
 
 type connectionPool interface {

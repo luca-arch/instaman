@@ -35,7 +35,10 @@ import (
 //   - `in:"pk,path,required"` will search for the pathvalue named pk, and return an error if not found.
 //   - `in:"job_id,omitempty"` will search for the query arg named job_id, allowing it to be empty.
 func InputFromRequest[T any](r *http.Request) (T, error) { //nolint:ireturn
-	var in T
+	var (
+		err error
+		in  T
+	)
 
 	// Get the reflect.Value of the struct
 	inValue := reflect.ValueOf(&in).Elem()
@@ -92,8 +95,14 @@ func InputFromRequest[T any](r *http.Request) (T, error) { //nolint:ireturn
 
 		// Set the field value.
 		fieldValue := inValue.Field(i)
+		switch fieldValue.Kind() { //nolint:exhaustive // The default should cover enough.
+		case reflect.Ptr:
+			err = hydratePointer(&fieldValue, &field, tagName, queryValue)
+		default:
+			err = hydrateValue(&fieldValue, tagName, queryValue)
+		}
 
-		if err := hydrateValue(&fieldValue, tagName, queryValue); err != nil {
+		if err != nil {
 			return in, err
 		}
 	}
@@ -101,7 +110,53 @@ func InputFromRequest[T any](r *http.Request) (T, error) { //nolint:ireturn
 	return in, nil
 }
 
-// hydrateValue sets pointer value based on its type and the queryValue.
+// hydratePointer sets the pointer's value based on its type and the queryValue.
+func hydratePointer(fieldValue *reflect.Value, field *reflect.StructField, tagName, queryValue string) error {
+	fieldType := field.Type
+	elemType := fieldType.Elem()
+
+	if queryValue == "" {
+		fieldValue.Set(reflect.Zero(fieldType))
+
+		return nil
+	}
+
+	elemValue := reflect.New(elemType).Elem()
+
+	switch elemType.Kind() { //nolint:exhaustive
+	case reflect.String:
+		elemValue.SetString(queryValue)
+	case reflect.Int, reflect.Int32, reflect.Int64:
+		intVal, err := strconv.ParseInt(queryValue, 10, elemType.Bits())
+		if err != nil {
+			return errors.New("invalid integer value for field: " + tagName) //nolint:err113
+		}
+
+		elemValue.SetInt(intVal)
+	case reflect.Struct:
+		if elemType == reflect.TypeOf(time.Time{}) {
+			timeVal, err := time.Parse(time.RFC3339, queryValue)
+			if err != nil {
+				return errors.New("invalid time format for field: " + tagName) //nolint:err113
+			}
+
+			elemValue.Set(reflect.ValueOf(timeVal))
+		} else if elemType == reflect.TypeOf(url.URL{}) { //nolint:exhaustruct // Needed only for type-checking
+			urlVal, err := url.Parse(queryValue)
+			if err != nil {
+				return errors.New("invalid URL format for field: " + tagName) //nolint:err113
+			}
+
+			elemValue.Set(reflect.ValueOf(*urlVal))
+		}
+	}
+
+	fieldValue.Set(elemValue.Addr())
+
+	return nil
+}
+
+// hydrateValue sets the value based on its type and the queryValue.
 func hydrateValue(fieldValue *reflect.Value, tagName, queryValue string) error {
 	switch fieldValue.Kind() { //nolint:exhaustive
 	case reflect.String:

@@ -48,7 +48,9 @@ This serves HTTP requests using the `application/json` format on via the followi
 * `GET /instaman/instagram/following/{id:int}`
 * `GET /instaman/instagram/picture` (this does not serve JSON)
 * `GET /instaman/jobs/copy`
+* `GET /instaman/jobs/all`
 * `GET /instaman/jobs/`
+* `POST /instaman/jobs/copy`
 
 ### `/instaproxy`
 

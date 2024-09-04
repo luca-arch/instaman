@@ -20,6 +20,7 @@
 package webserver_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"io"
@@ -34,6 +35,7 @@ import (
 
 type args struct {
 	endpoint string
+	method   string
 }
 
 type wants struct {
@@ -126,14 +128,46 @@ func TestEndpointsResponses(t *testing.T) {
 				status: http.StatusBadRequest,
 			},
 		},
+		"GET /instaman/jobs/all": {
+			args{endpoint: "/instaman/jobs/all"},
+			wants{
+				body:   fixture(t, "testdata/jobs-all.json"),
+				status: http.StatusOK,
+			},
+		},
+		"POST /instaman/jobs/copy": {
+			args{
+				endpoint: "/instaman/jobs/copy",
+				method:   http.MethodPost,
+			},
+			wants{
+				body:   fixture(t, "testdata/jobs-copy-new.json"),
+				status: http.StatusOK,
+			},
+		},
 	}
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
+			var (
+				res *http.Response
+				err error
+			)
+
 			//nolint:noctx // Ok when testing
-			res, err := http.Get(testServer.URL + test.args.endpoint)
+			switch test.args.method {
+			case http.MethodPost:
+				// Empty body as the webserver's services are mocked in common_test.go.
+				b := bytes.NewReader([]byte("{}"))
+				//nolint:bodyclose // False positive.
+				res, err = http.Post(testServer.URL+test.args.endpoint, "application/json", b)
+			default:
+				//nolint:bodyclose // False positive.
+				res, err = http.Get(testServer.URL + test.args.endpoint)
+			}
+
 			assert.NoError(t, err)
 
 			body, err := io.ReadAll(res.Body)

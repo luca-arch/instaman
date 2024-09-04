@@ -100,7 +100,7 @@ func TestCount(t *testing.T) {
 			t.Helper()
 
 			i := dest[0]
-			p, ok := i.(*int)
+			p, ok := i.(*int32)
 
 			if !ok {
 				t.Fatalf("Expected *int, got %#v", p)
@@ -119,5 +119,5 @@ func TestCount(t *testing.T) {
 	res, err := database.Count(ctx, db, "mock sql statement", 123)
 
 	assert.NoError(t, err)
-	assert.Equal(t, 400, res)
+	assert.Equal(t, int32(400), res)
 }

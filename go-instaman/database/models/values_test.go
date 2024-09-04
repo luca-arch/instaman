@@ -17,19 +17,66 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package models
+package models_test
+
+import (
+	"testing"
+
+	"github.com/luca-arch/instaman/database/models"
+	"github.com/stretchr/testify/assert"
+)
 
 const (
 	JobTypeCopyFollowers = "copy-followers"
 	JobTypeCopyFollowing = "copy-following"
 )
 
-// IsValidJobType return whether jobType is a valid value for the jobs.job_type column.
-func IsValidJobType(jobType string) bool {
-	switch jobType {
-	case JobTypeCopyFollowers, JobTypeCopyFollowing:
-		return true
-	default:
-		return false
+func TestIsValidJobType(t *testing.T) {
+	t.Parallel()
+
+	type args struct {
+		in string
+	}
+
+	type wants struct {
+		out bool
+	}
+
+	tests := map[string]struct {
+		args
+		wants
+	}{
+		"valid - copy-followers": {
+			args{
+				in: "copy-followers",
+			},
+			wants{
+				out: true,
+			},
+		},
+		"valid - copy-following": {
+			args{
+				in: "copy-following",
+			},
+			wants{
+				out: true,
+			},
+		},
+		"invalid - blank": {
+			args{
+				in: "",
+			},
+			wants{
+				out: false,
+			},
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			assert.Equal(t, test.out, models.IsValidJobType(test.in))
+		})
 	}
 }
