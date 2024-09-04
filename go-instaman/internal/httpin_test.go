@@ -35,12 +35,28 @@ type StructInt struct {
 	Int64Num int64 `in:"val64"`
 }
 
+type StructPtr struct {
+	IntNum   *int    `in:"val"`
+	Int16Num *int16  `in:"val16"`
+	Int32Num *int32  `in:"val32"`
+	Int64Num *int64  `in:"val64"`
+	String   *string `in:"valStr"`
+}
+
 type StructRequired struct {
 	Param string `in:"sentence,required"`
 }
 
 func TestInputFromRequest(t *testing.T) {
 	t.Parallel()
+
+	var (
+		intNum         = 10
+		int16Num int16 = 20
+		int32Num int32 = 30
+		int64Num int64 = 40
+		strVal         = "my string"
+	)
 
 	type args struct {
 		url string
@@ -71,16 +87,16 @@ func TestInputFromRequest(t *testing.T) {
 			},
 			wants{
 				out: StructInt{
-					IntNum:   10,
-					Int16Num: 20,
-					Int32Num: 30,
-					Int64Num: 40,
+					IntNum:   intNum,
+					Int16Num: int16Num,
+					Int32Num: int32Num,
+					Int64Num: int64Num,
 				},
 			},
 		},
 		"ok - struct with required value": {
 			args{
-				url: "https://example.com/?sentence=my+string+value",
+				url: "https://example.com/?sentence=my+string",
 			},
 			fields{
 				call: func(r *http.Request) (any, error) {
@@ -89,7 +105,26 @@ func TestInputFromRequest(t *testing.T) {
 			},
 			wants{
 				out: StructRequired{
-					Param: "my string value",
+					Param: strVal,
+				},
+			},
+		},
+		"ok - struct with pointers": {
+			args{
+				url: "https://example.com/?val=10&val32=30&val64=40&valStr=my+string",
+			},
+			fields{
+				call: func(r *http.Request) (any, error) {
+					return internal.InputFromRequest[StructPtr](r)
+				},
+			},
+			wants{
+				out: StructPtr{
+					IntNum:   &intNum,
+					Int16Num: nil,
+					Int32Num: &int32Num,
+					Int64Num: &int64Num,
+					String:   &strVal,
 				},
 			},
 		},
