@@ -56,6 +56,11 @@ This serves HTTP requests using the `application/json` format on via the followi
 
 A small webserver that acts as a proxy (with cache) for the Instagram GraphQL APIs. Written in Python and powered by [FastAPI](https://github.com/fastapi/fastapi), it is completely asynchronous and does not require many dependencies (not even a database).
 
+### `/react-app`
+
+A simple SPA written with TypeScript, React, and components taken from the [Ant Library](https://ant.design/).
+See its [README](./react-app/README.md) file.
+
 ## Other Directories
 
 ### `/data`
