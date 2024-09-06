@@ -139,7 +139,7 @@ func SelectOne[T any](ctx context.Context, db *Database, sql string, args ...any
 
 	defer res.Close()
 
-	out, err := pgx.CollectExactlyOneRow(res, pgx.RowToStructByPos[T])
+	out, err := pgx.CollectExactlyOneRow(res, pgx.RowToStructByNameLax[T])
 	if err != nil {
 		return nil, errors.Join(ErrDatabaseFailure, err)
 	}

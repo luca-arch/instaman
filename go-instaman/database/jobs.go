@@ -42,7 +42,8 @@ var (
 	ErrFindCopyJobParams = errors.New("invalid direction")       // Invalid direction passed to FindCopyJob().
 	ErrInvalidChecksum   = errors.New("invalid checksum")        // Invalid checksum.
 	ErrInvalidID         = errors.New("invalid ID")              // Invalid identifier.
-	ErrInvalidType       = errors.New("invalid job tyoe")        // Invalid job type.
+	ErrInvalidState      = errors.New("invalid job state")       // Invalid state.
+	ErrInvalidType       = errors.New("invalid job type")        // Invalid job type.
 )
 
 // FindCopyJobParams defines the search parameters for FindCopyJob().
@@ -62,8 +63,6 @@ type FindJobParams struct {
 
 // FindJobsParams defines the search parameters for FindJobs().
 type FindJobsParams struct {
-	// LastRun *time.Time `in:"nextRun"`
-	// NextRun *time.Time `in:"nextRun"`
 	Order string `in:"order"`
 	Page  int32  `in:"page"`
 	State string `in:"state"`
@@ -76,6 +75,7 @@ type NewCopyJobParams struct {
 	NextRun  *time.Time `json:"nextRun"`
 	Type     string     `json:"type"`
 	Metadata struct {
+		Cursor    string `json:"-"` // Won't let clients update the cursor.
 		Frequency string `json:"frequency"`
 		UserID    int64  `json:"userID"` //nolint:tagliatelle // Always capitalise ID suffix.
 	} `json:"metadata"`
@@ -126,13 +126,9 @@ func (d *Database) FindCopyJob(ctx context.Context, params FindCopyJobParams) (*
 
 	switch {
 	case err != nil:
-		return nil, errors.Join(err, ErrDriverFailure)
+		return nil, errors.Join(ErrDriverFailure, err)
 	case params.WithPage == nil || *params.WithPage < 0:
-		return &models.CopyJob{
-			Job:     job,
-			Results: nil,
-			Total:   total,
-		}, nil
+		return models.NewCopyJob(job) //nolint:wrapcheck
 	}
 
 	limit, offset := *params.WithPage, MaxCopyResults
@@ -155,14 +151,18 @@ func (d *Database) FindCopyJob(ctx context.Context, params FindCopyJobParams) (*
 
 	results, err := Select[models.User](ctx, d, sql, params.UserID, limit, offset)
 	if err != nil {
-		return nil, errors.Join(err, ErrDriverFailure)
+		return nil, errors.Join(ErrDriverFailure, err)
 	}
 
-	return &models.CopyJob{
-		Job:     job,
-		Results: results,
-		Total:   total,
-	}, nil
+	cj, err := models.NewCopyJob(job)
+	if err != nil {
+		return nil, err //nolint:wrapcheck
+	}
+
+	cj.Results = results
+	cj.Total = total
+
+	return cj, nil
 }
 
 // FindJob finds a job by its ID or checksum.
@@ -301,18 +301,14 @@ func (d *Database) NewCopyJob(ctx context.Context, params NewCopyJobParams) (*mo
 		Label:    params.Label,
 		Metadata: params.Metadata,
 		NextRun:  params.NextRun,
-		State:    "new",
+		State:    models.JobStateNew,
 		Type:     params.Type,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return &models.CopyJob{
-		Job:     j,
-		Results: nil,
-		Total:   0,
-	}, nil
+	return models.NewCopyJob(j) //nolint:wrapcheck
 }
 
 // NewJob creates a new Job in the `jobs` table.
@@ -320,6 +316,8 @@ func (d *Database) NewJob(ctx context.Context, params NewJobParams) (*models.Job
 	switch {
 	case !models.IsValidJobType(params.Type):
 		return nil, ErrInvalidType
+	case !models.IsValidJobState(params.State):
+		return nil, ErrInvalidState
 	case params.Checksum == "":
 		return nil, ErrInvalidChecksum
 	}
@@ -340,7 +338,7 @@ func (d *Database) NewJob(ctx context.Context, params NewJobParams) (*models.Job
 
 	j, err := SelectOne[models.Job](ctx, d, sql, params.Checksum, params.Type, params.Label, params.Metadata, params.NextRun, params.State)
 	if err != nil {
-		return nil, errors.Join(err, ErrDriverFailure)
+		return nil, errors.Join(ErrDriverFailure, err)
 	}
 
 	return j, nil
