@@ -138,7 +138,7 @@ async def get_user_followers(user_id: int, next_cursor: Optional[str] = None):
 
     return {
         "next": next,
-        "users": followers,
+        "users": [u.to_dict() for u in followers],
     }
 
 
@@ -164,7 +164,7 @@ async def get_user_following(user_id: int, next_cursor: Optional[str] = None):
 
     return {
         "next": next,
-        "users": following,
+        "users": [u.to_dict() for u in following],
     }
 
 
