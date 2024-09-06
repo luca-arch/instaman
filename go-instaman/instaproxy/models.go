@@ -65,7 +65,7 @@ func (u *URLField) MarshalJSON() ([]byte, error) {
 
 	val, err := json.Marshal(u.String())
 	if err != nil {
-		return nil, errors.Join(err, ErrInvalidPictureURL)
+		return nil, errors.Join(ErrInvalidPictureURL, err)
 	}
 
 	return val, nil
@@ -82,7 +82,7 @@ func (u *URLField) UnmarshalJSON(data []byte) error {
 
 	switch {
 	case err != nil:
-		return errors.Join(err, ErrInvalidPictureURL)
+		return errors.Join(ErrInvalidPictureURL, err)
 	case s == "":
 		return nil
 	}
@@ -91,7 +91,7 @@ func (u *URLField) UnmarshalJSON(data []byte) error {
 
 	switch {
 	case err != nil:
-		return errors.Join(err, ErrInvalidPictureURL)
+		return errors.Join(ErrInvalidPictureURL, err)
 	case !val.IsAbs():
 		return ErrInvalidPictureURL
 	}
