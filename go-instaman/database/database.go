@@ -100,6 +100,20 @@ func Count(ctx context.Context, db *Database, sql string, args ...any) (int32, e
 	return count, nil
 }
 
+// Execute executes the provided SQL string without expecting anything to return.
+func Execute(ctx context.Context, db *Database, sql string, args ...any) error {
+	db.logger.Debug("Query", "sql", sql, "args", args)
+
+	res, err := db.cnx.Query(ctx, sql, args...)
+	if err != nil {
+		return errors.Join(ErrDatabaseFailure, err)
+	}
+
+	res.Close()
+
+	return nil
+}
+
 // Select executes the provided SQL and returns the whole resultset.
 func Select[T any](ctx context.Context, db *Database, sql string, args ...any) ([]T, error) {
 	db.logger.Debug("Query", "sql", sql, "args", args)

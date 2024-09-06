@@ -91,6 +91,14 @@ type NewJobParams struct {
 	Type     string
 }
 
+// UpdateJobParams defines the input data for UpdateJob().
+type UpdateJobParams struct {
+	Frequency string `json:"frequency"`
+	ID        int64  `json:"id"`
+	Label     string `json:"label"`
+	State     string `json:"state"`
+}
+
 // FindCopyJob finds a job of type `copy-followers` or `copy-following`.
 // It calls FindJob and augments the result with the total number of connections already retrieved.
 // If WithPage is set, that slice of results is also included in the returned value.
@@ -342,6 +350,36 @@ func (d *Database) NewJob(ctx context.Context, params NewJobParams) (*models.Job
 	}
 
 	return j, nil
+}
+
+// UpdateJob updates the specified columns in the `jobs` table.
+func (d *Database) UpdateJob(ctx context.Context, params UpdateJobParams) error {
+	colsP := make([]string, 0)
+	args := make([]any, 0)
+
+	if models.IsValidJobFrequency(params.Frequency) {
+		colsP = append(colsP, nextPlaceholder("metadata ->> 'frequency'", colsP))
+		args = append(args, params.Frequency)
+	}
+
+	if models.IsValidJobState(params.State) {
+		colsP = append(colsP, nextPlaceholder("state", colsP))
+		args = append(args, params.State)
+	}
+
+	if params.Label != "" {
+		colsP = append(colsP, nextPlaceholder("label", colsP))
+		args = append(args, params.Label)
+	}
+
+	args = append(args, params.ID)
+	sql := `UPDATE jobs SET ` + strings.Join(colsP, ",") + ` WHERE ` + nextPlaceholder("id", colsP)
+
+	if err := Execute(ctx, d, sql, args...); err != nil {
+		return errors.Join(ErrDriverFailure, err)
+	}
+
+	return nil
 }
 
 // nextPlaceholder builds prepared statements' placeholders.
