@@ -21,8 +21,45 @@
 package models
 
 import (
+	"bytes"
+	"encoding/json"
+	"errors"
 	"time"
 )
+
+var (
+	ErrInvalidUserID   = errors.New("invalid user ID")
+	ErrInvalidMetadata = errors.New("job has invalid metadata")
+	ErrInvalidCopy     = errors.New("not a CopyJob")
+)
+
+// CopyJob represents a record of the `jobs` table of which the type is either `copy-followers` or `copy-following`.
+type CopyJob struct {
+	*Job
+
+	Metadata CopyJobMetadata `json:"metadata"`
+	Results  []User          `json:"results"`
+	Total    int32           `json:"resultsCount"`
+}
+
+// CopyJobMetadata.
+type CopyJobMetadata struct {
+	Cursor    *string `json:"cursor,omitempty"`
+	Frequency string  `json:"frequency"`
+	UserID    int64   `json:"userID"` //nolint:tagliatelle // Always capitalise ID suffix.
+}
+
+// Job represents a record of the `jobs` table.
+type Job struct {
+	BinData  []byte     `description:"Job's metadata as binary stream" json:"metadata" db:"metadata"`
+	ID       int64      `description:"Record PK" json:"id" db:"id"`
+	Checksum string     `description:"Job checksum to avoid duplicates" json:"checksum" db:"checksum"`
+	Type     string     `description:"Job type (copy-followers, copy-following)" json:"type" db:"job_type"`
+	Label    string     `description:"Human readable label" json:"label" db:"label"`
+	LastRun  *time.Time `description:"Last execution time" json:"lastRun" db:"last_run"`
+	NextRun  *time.Time `description:"Next scheduled time" json:"nextRun" db:"next_run"`
+	State    string     `description:"Execution's state (new, paused, suspended)" json:"state" db:"state"`
+}
 
 // User represents an Instagram user as stored in the `user_followers` and `user_following` tables.
 type User struct {
@@ -34,22 +71,39 @@ type User struct {
 	PictureURL *string   `description:"Profile picture URL" json:"pictureURL" db:"pic_url"` //nolint:tagliatelle // Make it consistent
 }
 
-// CopyJob represents a record of the `jobs` table of which the type is either `copy-followers` or `copy-following`.
-type CopyJob struct {
-	*Job
+// NewCopyJob morphs a Job into a CopyJob validating its metadata.
+// This factory is required to avoid a Metadata field of type of `map[string]any` and its bizarre behaviour with int64 being converted to float64.
+func NewCopyJob(j *Job) (*CopyJob, error) {
+	var m *CopyJobMetadata
 
-	Results []User `json:"results"`
-	Total   int32  `json:"resultsCount"`
-}
+	if j.Type != JobTypeCopyFollowers && j.Type != JobTypeCopyFollowing {
+		return nil, ErrInvalidCopy
+	}
 
-// Job represents a record of the `jobs` table.
-type Job struct {
-	ID       int64          `description:"Record PK" json:"id" db:"id"`
-	Checksum string         `description:"Job checksum to avoid duplicates" json:"checksum" db:"checksum"`
-	Type     string         `description:"Job type (copy-followers, copy-following)" json:"type" db:"job_type"`
-	Label    string         `description:"Human readable label" json:"label" db:"label"`
-	LastRun  *time.Time     `description:"Last execution time" json:"lastRun" db:"last_run"`
-	Metadata map[string]any `description:"Job's metadata" json:"metadata" db:"metadata"`
-	NextRun  *time.Time     `description:"Next scheduled time" json:"nextRun" db:"next_run"`
-	State    string         `description:"Execution's state (new, paused, suspended)" json:"state" db:"state"`
+	// Use an encoder with `Number()` so long integers are correctly parsed.
+	d := json.NewDecoder(bytes.NewBuffer(j.BinData))
+	d.UseNumber()
+
+	if err := d.Decode(&m); err != nil {
+		return nil, errors.Join(ErrInvalidMetadata, err)
+	}
+
+	if m.UserID < 1 {
+		return nil, ErrInvalidUserID
+	}
+
+	if m.Cursor != nil && *m.Cursor == "" {
+		m.Cursor = nil
+	}
+
+	if !IsValidJobFrequency(m.Frequency) {
+		m.Frequency = JobFrequencyDaily
+	}
+
+	return &CopyJob{
+		Job:      j,
+		Metadata: *m,
+		Results:  nil,
+		Total:    0,
+	}, nil
 }

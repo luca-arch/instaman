@@ -20,9 +20,35 @@
 package models
 
 const (
+	JobFrequencyDaily    = "daily"
+	JobFrequencyWeekly   = "weekly"
+	JobStateActive       = "active"
+	JobStateError        = "error"
+	JobStateNew          = "new"
+	JobStatePaused       = "pause"
 	JobTypeCopyFollowers = "copy-followers"
 	JobTypeCopyFollowing = "copy-following"
 )
+
+// IsValidJobFrequency return whether job frequency is a valid value for the jobs.metadata ->> frequency column.
+func IsValidJobFrequency(jobFreq string) bool {
+	switch jobFreq {
+	case JobFrequencyDaily, JobFrequencyWeekly:
+		return true
+	default:
+		return false
+	}
+}
+
+// IsValidJobState return whether state is a valid value for the jobs.state column.
+func IsValidJobState(jobType string) bool {
+	switch jobType {
+	case JobStateActive, JobStateError, JobStateNew, JobStatePaused:
+		return true
+	default:
+		return false
+	}
+}
 
 // IsValidJobType return whether jobType is a valid value for the jobs.job_type column.
 func IsValidJobType(jobType string) bool {

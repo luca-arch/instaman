@@ -56,7 +56,7 @@ func NewJobsService(db dbjobs) *Jobs {
 func (j *Jobs) FindCopyJob(ctx context.Context, params database.FindCopyJobParams) (*models.CopyJob, error) {
 	cj, err := j.db.FindCopyJob(ctx, params)
 	if err != nil {
-		return nil, errors.Join(err, ErrDBFailure)
+		return nil, errors.Join(ErrDBFailure, err)
 	}
 
 	return cj, nil
@@ -67,7 +67,7 @@ func (j *Jobs) FindCopyJob(ctx context.Context, params database.FindCopyJobParam
 func (j *Jobs) FindJob(ctx context.Context, params database.FindJobParams) (*models.Job, error) {
 	jj, err := j.db.FindJob(ctx, params)
 	if err != nil {
-		return nil, errors.Join(err, ErrDBFailure)
+		return nil, errors.Join(ErrDBFailure, err)
 	}
 
 	return jj, nil
@@ -77,7 +77,7 @@ func (j *Jobs) FindJob(ctx context.Context, params database.FindJobParams) (*mod
 func (j *Jobs) FindJobs(ctx context.Context, params database.FindJobsParams) ([]models.Job, error) {
 	jobs, err := j.db.FindJobs(ctx, params)
 	if err != nil {
-		return nil, errors.Join(err, ErrDBFailure)
+		return nil, errors.Join(ErrDBFailure, err)
 	}
 
 	return jobs, nil
@@ -87,7 +87,7 @@ func (j *Jobs) FindJobs(ctx context.Context, params database.FindJobsParams) ([]
 func (j *Jobs) NewCopyJob(ctx context.Context, params database.NewCopyJobParams) (*models.CopyJob, error) {
 	cj, err := j.db.NewCopyJob(ctx, params)
 	if err != nil {
-		return nil, errors.Join(err, ErrDBFailure)
+		return nil, errors.Join(ErrDBFailure, err)
 	}
 
 	return cj, nil
