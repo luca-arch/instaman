@@ -26,10 +26,137 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const (
-	JobTypeCopyFollowers = "copy-followers"
-	JobTypeCopyFollowing = "copy-following"
-)
+func TestIsValidJobFrequency(t *testing.T) {
+	t.Parallel()
+
+	type args struct {
+		in string
+	}
+
+	type wants struct {
+		out bool
+	}
+
+	tests := map[string]struct {
+		args
+		wants
+	}{
+		"valid - daily": {
+			args{
+				in: "daily",
+			},
+			wants{
+				out: true,
+			},
+		},
+		"valid - weekly": {
+			args{
+				in: "weekly",
+			},
+			wants{
+				out: true,
+			},
+		},
+		"invalid - blank": {
+			args{
+				in: "",
+			},
+			wants{
+				out: false,
+			},
+		},
+		"invalid - illegal value": {
+			args{
+				in: "something else",
+			},
+			wants{
+				out: false,
+			},
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			assert.Equal(t, test.out, models.IsValidJobFrequency(test.in))
+		})
+	}
+}
+
+func TestIsValidJobState(t *testing.T) {
+	t.Parallel()
+
+	type args struct {
+		in string
+	}
+
+	type wants struct {
+		out bool
+	}
+
+	tests := map[string]struct {
+		args
+		wants
+	}{
+		"valid - active": {
+			args{
+				in: "active",
+			},
+			wants{
+				out: true,
+			},
+		},
+		"valid - error": {
+			args{
+				in: "error",
+			},
+			wants{
+				out: true,
+			},
+		},
+		"valid - new": {
+			args{
+				in: "new",
+			},
+			wants{
+				out: true,
+			},
+		},
+		"valid - pause": {
+			args{
+				in: "pause",
+			},
+			wants{
+				out: true,
+			},
+		},
+		"invalid - blank": {
+			args{
+				in: "",
+			},
+			wants{
+				out: false,
+			},
+		},
+		"invalid - illegal value": {
+			args{
+				in: "something else",
+			},
+			wants{
+				out: false,
+			},
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			assert.Equal(t, test.out, models.IsValidJobState(test.in))
+		})
+	}
+}
 
 func TestIsValidJobType(t *testing.T) {
 	t.Parallel()
@@ -65,6 +192,14 @@ func TestIsValidJobType(t *testing.T) {
 		"invalid - blank": {
 			args{
 				in: "",
+			},
+			wants{
+				out: false,
+			},
+		},
+		"invalid - illegal value": {
+			args{
+				in: "something else",
 			},
 			wants{
 				out: false,

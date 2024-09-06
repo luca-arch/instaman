@@ -216,6 +216,7 @@ func (j *jobsvc) NewCopyJob(context.Context, database.NewCopyJobParams) (*models
 
 	return &models.CopyJob{
 		Job: &models.Job{
+			BinData:  []byte(`{"cursor":null, "frequency":"weekly", userID:123456}`),
 			ID:       123,
 			Checksum: "test:123456",
 			Type:     "jobtype",
