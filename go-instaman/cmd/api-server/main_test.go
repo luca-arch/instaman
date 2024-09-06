@@ -29,6 +29,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// This test does almost nothing but increase code coverage.
 func TestBoot(t *testing.T) {
 	t.Parallel()
 

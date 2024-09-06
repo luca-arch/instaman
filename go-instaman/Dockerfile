@@ -19,6 +19,7 @@ RUN go build -o api-server ./cmd/api-server/main.go
 FROM alpine:3.20.2
 
 ENV GOMAXPROCS="1"
+ENV ISDOCKER="1"
 COPY --from=builder /mnt/src/api-server /srv/api-server
 
 EXPOSE 10000

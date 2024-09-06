@@ -12,6 +12,8 @@ See, for instance:
 * The list of [pull requests](https://github.com/luca-arch/instaman/pulls?q=is%3Apr)
 * The [commit history](https://github.com/luca-arch/instaman/commits)
 
+Note all commits messages are prepended with [gitmoji](https://gitmoji.dev).
+
 ## Set up
 
 ### Dependencies
