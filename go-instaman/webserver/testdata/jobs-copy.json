@@ -1,1 +1,1 @@
-{"id":123,"checksum":"test:123456","type":"jobtype","label":"Test label","lastRun":"2025-01-01T12:00:00Z","metadata":null,"nextRun":"2025-01-01T12:00:00Z","state":"paused","results":[],"resultsCount":0}
+{"id":123,"checksum":"test:123456","type":"jobtype","label":"Test label","lastRun":"2025-01-01T12:00:00Z","nextRun":"2025-01-01T12:00:00Z","state":"paused","metadata":{"frequency":"","userID":0},"results":[],"resultsCount":0}

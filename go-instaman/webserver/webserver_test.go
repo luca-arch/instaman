@@ -176,7 +176,7 @@ func TestEndpointsResponses(t *testing.T) {
 			res.Body.Close()
 
 			assert.Equal(t, test.wants.status, res.StatusCode)
-			assert.Equal(t, test.wants.body, body, "Actual: "+string(body))
+			assert.Equal(t, test.wants.body, body, "Expected: "+string(test.wants.body)+"\nActual: "+string(body))
 		})
 	}
 }
