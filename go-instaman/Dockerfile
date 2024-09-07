@@ -13,6 +13,7 @@ COPY internal internal/
 COPY service service/
 COPY webserver webserver/
 RUN go build -o api-server ./cmd/api-server/main.go
+RUN go build -o worker ./cmd/worker/main.go
 
 
 # Golang app runner
@@ -21,6 +22,7 @@ FROM alpine:3.20.2
 ENV GOMAXPROCS="1"
 ENV ISDOCKER="1"
 COPY --from=builder /mnt/src/api-server /srv/api-server
+COPY --from=builder /mnt/src/worker /srv/worker
 
 EXPOSE 10000
 

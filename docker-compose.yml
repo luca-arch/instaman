@@ -64,3 +64,15 @@ services:
     mem_limit: "32M"
     ports:
       - "8080:8080"
+
+  worker:
+    <<: *unprivileged
+    build: ./go-instaman
+    cpus: 0.5
+    depends_on:
+      - instaproxy
+      - postgres
+    entrypoint: ["/srv/worker"]
+    environment:
+      <<: *db-credentials
+    mem_limit: "32M"
