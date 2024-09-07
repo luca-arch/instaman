@@ -24,7 +24,7 @@ import (
 	"log/slog"
 	"testing"
 
-	apiserver "github.com/luca-arch/instaman/cmd/api-server"
+	worker "github.com/luca-arch/instaman/cmd/worker"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -34,9 +34,9 @@ func TestBoot(t *testing.T) {
 
 	ctx := context.TODO()
 
-	_, logger := apiserver.Boot(ctx, false)
+	_, logger := worker.Boot(ctx, false)
 	assert.False(t, logger.Handler().Enabled(ctx, slog.LevelDebug))
 
-	_, logger = apiserver.Boot(ctx, true)
+	_, logger = worker.Boot(ctx, true)
 	assert.True(t, logger.Handler().Enabled(ctx, slog.LevelDebug))
 }
