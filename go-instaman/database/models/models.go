@@ -58,7 +58,7 @@ type Job struct {
 	Label    string     `description:"Human readable label" json:"label" db:"label"`
 	LastRun  *time.Time `description:"Last execution time" json:"lastRun" db:"last_run"`
 	NextRun  *time.Time `description:"Next scheduled time" json:"nextRun" db:"next_run"`
-	State    string     `description:"Execution's state (new, paused, suspended)" json:"state" db:"state"`
+	State    string     `description:"Execution's state (active, error, new, pause)" json:"state" db:"state"`
 }
 
 // User represents an Instagram user as stored in the `user_followers` and `user_following` tables.

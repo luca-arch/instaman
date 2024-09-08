@@ -62,7 +62,7 @@ func (d *Database) WithLogger(logger *slog.Logger) *Database {
 func NewPool(ctx context.Context, dsn string) *Database {
 	cnx, err := pgxpool.New(ctx, dsn)
 	if err != nil {
-		// Lazy panic here because it happens only with malformed dsn strings.
+		// Lazily panic here because it happens only with malformed dsn strings.
 		panic(err)
 	}
 
