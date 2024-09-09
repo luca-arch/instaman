@@ -37,14 +37,18 @@ const (
 
 var ErrDatabaseFailure = errors.New("postgresql error") // Wrapper for pgx/pgxpool errors.
 
-type connectionPool interface {
-	Query(context.Context, string, ...any) (pgx.Rows, error)
-}
-
 // Database wraps a PostgreSQL connection pool.
 type Database struct {
-	cnx    connectionPool
-	logger *slog.Logger
+	cnx     *pgxpool.Pool
+	logger  *slog.Logger
+	querier querier
+}
+
+// WithQuerier sets the querier helper. This is only ever useful for testing.
+func (d *Database) WithQuerier(q querier) *Database {
+	d.querier = q
+
+	return d
 }
 
 // WithLogger sets the logger.
@@ -54,24 +58,18 @@ func (d *Database) WithLogger(logger *slog.Logger) *Database {
 	return d
 }
 
-// WithPool sets the connection pool. This is only ever useful for testing.
-func (d *Database) WithPool(cnx connectionPool) *Database {
-	d.cnx = cnx
-
-	return d
-}
-
 // NewPool instantiates a new connection pool from the provided DSN string.
 func NewPool(ctx context.Context, dsn string) *Database {
 	cnx, err := pgxpool.New(ctx, dsn)
 	if err != nil {
-		// Lazy panic here because it happens only with malformed dsn strings.
+		// Lazily panic here because it happens only with malformed dsn strings.
 		panic(err)
 	}
 
 	return &Database{
-		cnx:    cnx,
-		logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
+		cnx:     cnx,
+		logger:  slog.New(slog.NewTextHandler(io.Discard, nil)),
+		querier: &Querier{},
 	}
 }
 

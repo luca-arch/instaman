@@ -130,16 +130,23 @@ func (d *Database) FindCopyJob(ctx context.Context, params FindCopyJobParams) (*
 	}
 
 	sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s WHERE account_id = $1`, table)
-	total, err := Count(ctx, d, sql, params.UserID)
+	total, err := d.querier.Count(ctx, d, sql, params.UserID)
 
 	switch {
 	case err != nil:
-		return nil, errors.Join(ErrDriverFailure, err)
+		return nil, err //nolint:wrapcheck // Error from the same package
 	case params.WithPage == nil || *params.WithPage < 0:
-		return models.NewCopyJob(job) //nolint:wrapcheck
+		ret, err := models.NewCopyJob(job)
+		if err != nil {
+			return nil, err //nolint:wrapcheck
+		}
+
+		ret.Total = total
+
+		return ret, nil
 	}
 
-	limit, offset := *params.WithPage, MaxCopyResults
+	limit, offset := MaxCopyResults, *params.WithPage*MaxCopyResults
 
 	sql = `
 	SELECT
@@ -157,9 +164,9 @@ func (d *Database) FindCopyJob(ctx context.Context, params FindCopyJobParams) (*
 	LIMIT $2 OFFSET $3
 	`
 
-	results, err := Select[models.User](ctx, d, sql, params.UserID, limit, offset)
+	results, err := d.querier.SelectUsers(ctx, d, sql, params.UserID, limit, offset)
 	if err != nil {
-		return nil, errors.Join(ErrDriverFailure, err)
+		return nil, err //nolint:wrapcheck // Error from the same package
 	}
 
 	cj, err := models.NewCopyJob(job)
@@ -174,6 +181,7 @@ func (d *Database) FindCopyJob(ctx context.Context, params FindCopyJobParams) (*
 }
 
 // FindJob finds a job by its ID or checksum.
+// It returns a nil pointer if no job is found.
 func (d *Database) FindJob(ctx context.Context, params FindJobParams) (*models.Job, error) {
 	if params.ID <= 0 && params.Checksum == "" {
 		return nil, ErrFindJobParams
@@ -216,7 +224,7 @@ func (d *Database) FindJob(ctx context.Context, params FindJobParams) (*models.J
 		jobs
 	WHERE ` + strings.Join(whereP, " AND ")
 
-	job, err := SelectOne[models.Job](ctx, d, sql, whereV...)
+	job, err := d.querier.SelectJob(ctx, d, sql, whereV...)
 
 	switch {
 	case err == nil:
@@ -224,7 +232,7 @@ func (d *Database) FindJob(ctx context.Context, params FindJobParams) (*models.J
 	case errors.Is(err, pgx.ErrNoRows):
 		return nil, nil //nolint:nilnil // It means not found
 	default:
-		return nil, err
+		return nil, err //nolint:wrapcheck // Error from the same package
 	}
 }
 
@@ -285,14 +293,12 @@ func (d *Database) FindJobs(ctx context.Context, params FindJobsParams) ([]model
 	sql = fmt.Sprintf("%s %s ORDER BY %s %s LIMIT %d OFFSET %d",
 		sql, where, order, dir, MaxJobsResult, params.Page*MaxJobsResult)
 
-	jobs, err := Select[models.Job](ctx, d, sql, args...)
-
-	switch {
-	case err == nil:
-		return jobs, nil
-	default:
-		return nil, err
+	jobs, err := d.querier.SelectJobs(ctx, d, sql, args...)
+	if err != nil {
+		return nil, err //nolint:wrapcheck // Error from the same package
 	}
+
+	return jobs, nil
 }
 
 // NewCopyJob creates a new Job of either type copy-followers or copy-following.
@@ -344,9 +350,9 @@ func (d *Database) NewJob(ctx context.Context, params NewJobParams) (*models.Job
 	RETURNING *
 	`
 
-	j, err := SelectOne[models.Job](ctx, d, sql, params.Checksum, params.Type, params.Label, params.Metadata, params.NextRun, params.State)
+	j, err := d.querier.SelectJob(ctx, d, sql, params.Checksum, params.Type, params.Label, params.Metadata, params.NextRun, params.State)
 	if err != nil {
-		return nil, errors.Join(ErrDriverFailure, err)
+		return nil, err //nolint:wrapcheck // Error from the same package
 	}
 
 	return j, nil
@@ -358,7 +364,7 @@ func (d *Database) UpdateJob(ctx context.Context, params UpdateJobParams) error 
 	args := make([]any, 0)
 
 	if models.IsValidJobFrequency(params.Frequency) {
-		colsP = append(colsP, nextPlaceholder("metadata ->> 'frequency'", colsP))
+		colsP = append(colsP, "metadata = jsonb_set(metadata, '{frequency}', to_jsonb($1::text))")
 		args = append(args, params.Frequency)
 	}
 
@@ -375,8 +381,8 @@ func (d *Database) UpdateJob(ctx context.Context, params UpdateJobParams) error 
 	args = append(args, params.ID)
 	sql := `UPDATE jobs SET ` + strings.Join(colsP, ",") + ` WHERE ` + nextPlaceholder("id", colsP)
 
-	if err := Execute(ctx, d, sql, args...); err != nil {
-		return errors.Join(ErrDriverFailure, err)
+	if err := d.querier.Execute(ctx, d, sql, args...); err != nil {
+		return err //nolint:wrapcheck // Error from the same package
 	}
 
 	return nil

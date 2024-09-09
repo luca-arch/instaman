@@ -34,8 +34,8 @@ import (
 func (d *Database) InsertJobEvent(ctx context.Context, jobID int64, event string) error {
 	sqlEvent := `INSERT INTO jobs_events (event_msg, job_id, ts) VALUES ($1, $2, NOW())`
 
-	if err := Execute(ctx, d, sqlEvent, event, jobID); err != nil {
-		return err
+	if err := d.querier.Execute(ctx, d, sqlEvent, event, jobID); err != nil {
+		return err //nolint:wrapcheck // Error from the same package
 	}
 
 	return nil
@@ -65,7 +65,7 @@ func (d *Database) NextJob(ctx context.Context, jobType string) (*models.Job, er
 	LIMIT 1
 	`
 
-	job, err := SelectOne[models.Job](ctx, d, sql, jobType, models.JobStateActive, models.JobStateNew)
+	job, err := d.querier.SelectJob(ctx, d, sql, jobType, models.JobStateActive, models.JobStateNew)
 
 	switch {
 	case err == nil:
@@ -73,7 +73,7 @@ func (d *Database) NextJob(ctx context.Context, jobType string) (*models.Job, er
 	case errors.Is(err, pgx.ErrNoRows):
 		return nil, nil //nolint:nilnil // It means not found.
 	default:
-		return nil, err
+		return nil, err //nolint:wrapcheck // Error from the same package
 	}
 }
 
@@ -87,8 +87,8 @@ func (d *Database) ScheduleJob(ctx context.Context, jobID int64, nextRun time.Du
 		WHERE id = $2
 	`
 
-	if err := Execute(ctx, d, sqlUpdate, models.JobStateActive, jobID); err != nil {
-		return err
+	if err := d.querier.Execute(ctx, d, sqlUpdate, models.JobStateActive, jobID); err != nil {
+		return err //nolint:wrapcheck // Error from the same package
 	}
 
 	return nil
@@ -111,8 +111,8 @@ func (d *Database) StoreCopyJobResults(ctx context.Context, job *models.CopyJob,
 	for _, u := range results.Users {
 		d.logger.Debug("upsert "+table, "job.id", job.ID, "user", u)
 
-		if err := Execute(ctx, d, sql, job.Metadata.UserID, u.Handler, urlStringPtr(u.PictureURL), u.ID); err != nil {
-			return err
+		if err := d.querier.Execute(ctx, d, sql, job.Metadata.UserID, u.Handler, urlStringPtr(u.PictureURL), u.ID); err != nil {
+			return err //nolint:wrapcheck // Error from the same package
 		}
 	}
 
@@ -124,7 +124,7 @@ func (d *Database) StoreCopyJobResults(ctx context.Context, job *models.CopyJob,
 			WHERE id = $2
 		`
 
-		return Execute(ctx, d, sql, models.JobStateActive, job.ID)
+		return d.querier.Execute(ctx, d, sql, models.JobStateActive, job.ID) //nolint:wrapcheck // Error from the same package
 	}
 
 	sql = `
@@ -134,13 +134,13 @@ func (d *Database) StoreCopyJobResults(ctx context.Context, job *models.CopyJob,
 		WHERE id = $3
 	`
 
-	return Execute(ctx, d, sql, results.Next, models.JobStateActive, job.ID)
+	return d.querier.Execute(ctx, d, sql, results.Next, models.JobStateActive, job.ID) //nolint:wrapcheck // Error from the same package
 }
 
 // TouchJob updates the job's last_run value.
 func (d *Database) TouchJob(ctx context.Context, jobID int64) error {
-	if err := Execute(ctx, d, "UPDATE jobs SET last_run = NOW() WHERE id = $1", jobID); err != nil {
-		return err
+	if err := d.querier.Execute(ctx, d, "UPDATE jobs SET last_run = NOW() WHERE id = $1", jobID); err != nil {
+		return err //nolint:wrapcheck // Error from the same package
 	}
 
 	return nil
